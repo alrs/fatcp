@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+// copyToFat accepts a source and destination pathname as its arguments. FAT
+// filesystems have more restrictive file naming conventions than
+// traditional UNIX filesystems, so copyToFat uses a slug library to
+// simplify file and directory names on the destination filesystem.
 func copyToFat(src string, dest string) {
 	splitSrc, err := splitPath(src)
 	if err != nil {
@@ -64,6 +68,7 @@ func copyToFat(src string, dest string) {
 	filepath.Walk(src, walkFunc)
 }
 
+// cp copies a file from one part of the filesystem to another.
 func cp(src string, dest string) error {
 	srcHandle, err := os.Open(src)
 	if err != nil {
@@ -81,12 +86,17 @@ func cp(src string, dest string) error {
 	return destHandle.Close()
 }
 
+// slugFileName takes the name of a file as its argument, and returns
+// a slugged version without harming the filename extension.
 func slugFileName(fn string) (string, error) {
 	lastDot := strings.LastIndex(fn, ".")
+	// FIXME What happens when the file has no extension?
 	beforeDot := slug.Slug(fn[:lastDot])
 	return beforeDot + fn[lastDot:], nil
 }
 
+// splitPath takes a fully-qualified path and splits the directories
+// into a list.
 func splitPath(path string) ([]string, error) {
 	if path[0] != os.PathSeparator {
 		return nil, fmt.Errorf("%s not a fully-qualified path", path)
