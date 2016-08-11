@@ -90,9 +90,12 @@ func cp(src string, dest string) error {
 // a slugged version without harming the filename extension.
 func slugFileName(fn string) (string, error) {
 	lastDot := strings.LastIndex(fn, ".")
-	// FIXME What happens when the file has no extension?
-	beforeDot := slug.Slug(fn[:lastDot])
-	return beforeDot + fn[lastDot:], nil
+	if lastDot >= 0 {
+		beforeDot := slug.Slug(fn[:lastDot])
+		return beforeDot + fn[lastDot:], nil
+	} else {
+		return slug.Slug(fn), nil
+	}
 }
 
 // splitPath takes a fully-qualified path and splits the directories
