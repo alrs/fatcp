@@ -22,6 +22,15 @@ func TestCp(t *testing.T) {
 		t.Logf("Successfully copied to %s", destPath)
 	}
 
+	cleanupDestFile := func() {
+		if os.Remove(destPath) == nil {
+			t.Logf("Removed temporary file %s", destPath)
+		} else {
+			t.Fatalf("Failed to remove temporary file %s", destPath)
+		}
+	}
+	defer cleanupDestFile()
+
 	srcSha := sha1.New()
 	destSha := sha1.New()
 
@@ -53,6 +62,19 @@ func TestCp(t *testing.T) {
 		t.Log("SHA1 match between source and destination.")
 	} else {
 		t.Fatal("SHA1 mismatch between source and destination.")
+	}
+}
+
+func TestSlugFilename(t *testing.T) {
+	fileName := "This <is> a Terrible Filename?.mp3"
+	sluggedFileName, err := slugFileName(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sluggedFileName == "this-is-a-terrible-filename.mp3" {
+		t.Logf("Successfully slugged %s", sluggedFileName)
+	} else {
+		t.Fatalf("%s slugged into %s", fileName, sluggedFileName)
 	}
 }
 
