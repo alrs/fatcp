@@ -11,15 +11,21 @@ import (
 	"strings"
 )
 
+var verbose bool = false
+
 // checkDirExists checks if a directory exists, and returns the boolean result.
 func checkDirExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+	stat, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
+	if !stat.IsDir() {
+		return false, fmt.Errorf("%s is not a directory", path)
+	}
+
 	return true, nil
 }
 
@@ -82,7 +88,9 @@ func copyToFat(src string, dest string) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("Copied %s to %s\n", path, destFQP)
+			if verbose == true {
+				log.Printf("Copied %s to %s\n", path, destFQP)
+			}
 		}
 		return err
 	}
@@ -96,7 +104,9 @@ func copyToFat(src string, dest string) error {
 
 // createDirectory creates a directory at the provided path.
 func createDirectory(path string) (err error) {
-	log.Printf("creating directory %s\n", path)
+	if verbose == true {
+		log.Printf("creating directory %s\n", path)
+	}
 	err = os.MkdirAll(path, 0777)
 	return
 }
@@ -142,26 +152,34 @@ func splitPath(path string) ([]string, error) {
 }
 
 func main() {
+	verbArg := flag.Int("v", 0, "Verbosity")
+	srcArg := flag.String("src", "", "Source directory")
+	destArg := flag.String("dest", "", "Destination directory")
 	flag.Parse()
-	if len(flag.Args()) < 2 {
-		log.Fatal("fatcp requires a source and a destination argument.")
+
+	if len(*srcArg) == 0 && len(*destArg) == 0 {
+		log.Fatal("Source and destination arguments are required. Use -h for help.")
 	}
 
-	srcDir, err := filepath.Abs(flag.Args()[0])
-	if err != nil {
-		log.Fatal("source directory is not a valid directory name.")
-	}
-	destDir, err := filepath.Abs(flag.Args()[1])
-	if err != nil {
-		log.Fatal("destination is not a valid directory name.")
+	if *verbArg > 0 {
+		verbose = true
 	}
 
-	srcStat, err := os.Stat(srcDir)
-	if os.IsNotExist(err) {
-		log.Fatal("source directory does not exist.")
+	srcDir, err := filepath.Abs(*srcArg)
+	if err != nil {
+		log.Fatal("Source directory is not a valid directory name.")
 	}
-	if !srcStat.IsDir() {
-		log.Fatal("source is not a directory.")
+	destDir, err := filepath.Abs(*destArg)
+	if err != nil {
+		log.Fatal("Destination is not a valid directory name.")
+	}
+
+	exists, err := checkDirExists(srcDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !exists {
+		log.Fatal("Source directory does not exist.")
 	}
 
 	err = copyToFat(srcDir, destDir)
