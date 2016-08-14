@@ -11,21 +11,36 @@ import (
 	"strings"
 )
 
+// checkDirExists checks if a directory exists, and returns the boolean result.
+func checkDirExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // copyToFat accepts a source and destination pathname as its arguments. FAT
 // filesystems have more restrictive file naming conventions than
 // traditional UNIX filesystems, so copyToFat uses a slug library to
 // simplify file and directory names on the destination filesystem.
-func copyToFat(src string, dest string) {
+func copyToFat(src string, dest string) error {
 	splitSrc, err := splitPath(src)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	rootDepth := len(splitSrc)
-	walkFunc := func(path string, info os.FileInfo, err error) (localErr error) {
+	walkFunc := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if !info.IsDir() {
-			splitPath, localErr := splitPath(path)
-			if localErr != nil {
-				return localErr
+			splitPath, err := splitPath(path)
+			if err != nil {
+				return err
 			}
 			// Create a list to assemble the fully-qualified path of the destination.
 			var destList []string
@@ -41,7 +56,7 @@ func copyToFat(src string, dest string) {
 			// Slug the filename, retain the filename extension.
 			fileName, err := slugFileName(splitPath[len(splitPath)-1])
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			// Append the slugged filename to the list representing the destination
 			// directory.
@@ -50,22 +65,40 @@ func copyToFat(src string, dest string) {
 			// path seperator.
 			destFQP := strings.Join(destList, string(os.PathSeparator))
 			// This looks like an error is being thrown away, but instead it means
-			// that in this case we're only interested in the filename, not the file.
+			// that in this case we're only interested in the directory, not the
+			// filename.
 			destDir, _ := filepath.Split(destFQP)
-			_, err = os.Stat(destDir)
-			if os.IsNotExist(err) {
-				log.Printf("creating directory %s\n", destDir)
-				os.MkdirAll(destDir, 0777)
+			exists, err := checkDirExists(destDir)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				err = createDirectory(destDir)
+				if err != nil {
+					return err
+				}
 			}
 			err = cp(path, destFQP)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			log.Printf("Copied %s to %s\n", path, destFQP)
 		}
-		return
+		return err
 	}
-	filepath.Walk(src, walkFunc)
+	err = filepath.Walk(src, walkFunc)
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+// createDirectory creates a directory at the provided path.
+func createDirectory(path string) (err error) {
+	log.Printf("creating directory %s\n", path)
+	err = os.MkdirAll(path, 0777)
+	return
 }
 
 // cp copies a file from one part of the filesystem to another.
@@ -131,5 +164,8 @@ func main() {
 		log.Fatal("source is not a directory.")
 	}
 
-	copyToFat(srcDir, destDir)
+	err = copyToFat(srcDir, destDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

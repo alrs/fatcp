@@ -13,8 +13,27 @@ import (
 
 const srcPath = "./main_test.go"
 
+func TestCheckDirExists(t *testing.T) {
+	conditions := map[string]bool{
+		"./":               true,
+		"/etc":             true,
+		"/not/very/likely": false,
+	}
+	for c, b := range conditions {
+		exists, err := checkDirExists(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists == b {
+			t.Logf("Expected: Existence of %s is %t.", c, b)
+		} else {
+			t.Fatalf("Failed: Existence of %s should be %t.", c, !b)
+		}
+	}
+}
+
 func TestCp(t *testing.T) {
-	destPath := fmt.Sprintf("/tmp/fatcp-test-%d", time.Now().Unix())
+	destPath := fmt.Sprint("/tmp/fatcp-test-%d", time.Now().Unix())
 	err := cp(srcPath, string(destPath))
 	if err != nil {
 		t.Fatalf("Failed to copy file. %s", err)
@@ -62,6 +81,28 @@ func TestCp(t *testing.T) {
 		t.Log("SHA1 match between source and destination.")
 	} else {
 		t.Fatal("SHA1 mismatch between source and destination.")
+	}
+}
+
+func TestCreateDirectory(t *testing.T) {
+	testDirPath := fmt.Sprint("/tmp/fatcp-test-dir-%d", time.Now().Unix())
+	defer os.Remove(testDirPath)
+	err := createDirectory(testDirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = os.Stat(testDirPath)
+	if os.IsNotExist(err) {
+		t.Fatalf("Failed to create directory %s.", testDirPath)
+	}
+	exists, err := checkDirExists(testDirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists == true {
+		t.Logf("Expected: Directory %s created.", testDirPath)
+	} else {
+		t.Fatalf("Failed: Directory %s not created.", testDirPath)
 	}
 }
 
