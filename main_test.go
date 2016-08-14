@@ -6,6 +6,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -53,4 +54,34 @@ func TestCp(t *testing.T) {
 	} else {
 		t.Fatal("SHA1 mismatch between source and destination.")
 	}
+}
+
+func TestSplitPath(t *testing.T) {
+	splitLength := 3
+	path := "/var/log/syslog"
+	split, err := splitPath(path)
+	if len(split) != splitLength {
+		t.Fatalf("Split path is %d elements, should be %d.", len(split), splitLength)
+	} else {
+		t.Logf("Split path is correctly %d elements.", splitLength)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedSlice := []string{"var", "log", "syslog"}
+	if reflect.DeepEqual(split, expectedSlice) {
+		t.Logf("splitPath() returned expected slice: %s", expectedSlice)
+	} else {
+		t.Fatalf("splitPath() returned unexpected slice: %s", expectedSlice)
+	}
+
+	badPath := "not/a/fully/qualified/path"
+	_, err = splitPath(badPath)
+	if err == nil {
+		t.Fatalf("splitPath() failed to detect %s", badPath)
+	} else {
+		t.Logf("splitPath() properly detected %s", badPath)
+	}
+
 }
