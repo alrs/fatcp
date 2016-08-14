@@ -66,15 +66,20 @@ func TestCp(t *testing.T) {
 }
 
 func TestSlugFilename(t *testing.T) {
-	fileName := "This <is> a Terrible Filename?.mp3"
-	sluggedFileName, err := slugFileName(fileName)
-	if err != nil {
-		t.Fatal(err)
+	filenames := map[string]string{
+		"This <is> a Terrible Filename?.mp3":   "this-is-a-terrible-filename.mp3",
+		"Filename  ??  <without> an extension": "filename-without-an-extension",
 	}
-	if sluggedFileName == "this-is-a-terrible-filename.mp3" {
-		t.Logf("Successfully slugged %s", sluggedFileName)
-	} else {
-		t.Fatalf("%s slugged into %s", fileName, sluggedFileName)
+	for ugly, expected := range filenames {
+		slugged, err := slugFileName(ugly)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if slugged == expected {
+			t.Logf("Successfully slugged %s", slugged)
+		} else {
+			t.Fatalf("%s slugged into %s", ugly, slugged)
+		}
 	}
 }
 
