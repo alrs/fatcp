@@ -1,0 +1,4 @@
+github.com/extemporalgenome/slug v0.0.0-20150414033109-0320c85e32e0 h1:0A9+8DBvlpto0mr+SD1NadV5liSIAZkWnvyshwk88Bc=
+github.com/extemporalgenome/slug v0.0.0-20150414033109-0320c85e32e0/go.mod h1:96eSBMO0aE2dcsEygXzIsvGyOf7bM5kWuqVCPEgwLEI=
+golang.org/x/text v0.27.0 h1:4fGWRpyh641NLlecmyl4LOe6yDdfaYNrGb2zdfo4JV4=
+golang.org/x/text v0.27.0/go.mod h1:1D28KMCvyooCX9hBiosv5Tz/+YLxj0j7XhWjpSUF7CU=
